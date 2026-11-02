@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head(${pageTitle})}"></head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a th:replace="~{fragments :: brand}"></a>
+      <div class="workspace-label">ADMINISTRATOR WORKSPACE</div>
+      <nav class="app-nav" aria-label="Admin navigation">
+        <a th:href="@{/admin(view='users')}" th:classappend="${table.view=='users'} ? active"><span aria-hidden="true">◎</span> Users</a>
+        <a th:href="@{/admin(view='skills')}" th:classappend="${table.view=='skills'} ? active"><span aria-hidden="true">✧</span> Skills</a>
+        <a th:href="@{/admin(view='sessions')}" th:classappend="${table.view=='sessions'} ? active"><span aria-hidden="true">▦</span> Sessions</a>
+        <a th:href="@{/admin(view='ledger')}" th:classappend="${table.view=='ledger'} ? active"><span aria-hidden="true">◷</span> Credit ledger</a>
+        <div class="nav-divider"></div>
+        <a th:href="@{/dashboard}"><span aria-hidden="true">↗</span> Student workspace</a>
+        <a th:href="@{/settings}"><span aria-hidden="true">⚙</span> Account settings</a>
+      </nav>
+      <div class="sidebar-note"><span class="eyebrow">COMMUNITY RECORDS</span><p>View users and activity across CredLearn.</p></div>
+      <div class="sidebar-user">
+        <span class="avatar" th:text="${@display.initials(me.fullName)}"></span>
+        <div><strong th:text="${me.fullName}"></strong><small>Administrator</small></div>
+        <form th:action="@{/logout}" method="post"><button class="icon-button" aria-label="Log out" title="Log out">↪</button></form>
+      </div>
+    </aside>
+    <div class="app-main">
+      <header class="topbar"><span>CREDLEARN ADMIN</span><div><span class="community-dot"></span> Community overview</div></header>
+      <main id="main" class="content">
+        <div th:replace="~{fragments :: pageHeading('View registered users, skill listings, sessions, and credit activity.')}"></div>
+        <div class="stats-grid" aria-label="Community totals">
+          <article class="stat"><span>Student accounts</span><strong th:text="${counts.students}"></strong><small>Excludes administrator accounts</small></article>
+          <article class="stat"><span>Active skills</span><strong th:text="${counts.skills}"></strong><small>Live in the marketplace</small></article>
+          <article class="stat"><span>Total sessions</span><strong th:text="${counts.sessions}"></strong><small>All session statuses</small></article>
+          <article class="stat"><span>Reported disputes</span><strong th:text="${counts.disputes}"></strong><small>Awaiting participant agreement</small></article>
+        </div>
+        <section class="panel admin-records">
+          <div class="panel-heading"><h2 th:text="${table.view=='ledger' ? 'Credit ledger' : #strings.capitalize(table.view)}"></h2><span class="tag" th:text="${table.total + (table.total == 1 ? ' record' : ' records')}"></span></div>
+          <form th:if="${table.view=='users'}" th:action="@{/admin}" method="get" class="filter-form">
+            <input type="hidden" name="view" value="users">
+            <label for="q">Find a user</label>
+            <input id="q" name="q" class="form-control" th:value="${table.query}" placeholder="Name or email" maxlength="100">
+            <button class="btn btn-outline-primary">Search users</button>
+            <a th:if="${!table.query.isEmpty()}" th:href="@{/admin}">Clear</a>
+          </form>
+          <div class="table-responsive" tabindex="0" role="region" th:aria-label="${table.view}+' records'">
+            <table class="table align-middle">
+              <thead><tr><th scope="col" th:each="column : ${table.columns}" th:text="${column.label}"></th></tr></thead>
+              <tbody>
+                <tr th:each="row : ${table.rows}"><td th:each="column : ${table.columns}" th:class="'admin-col-'+${column.key}" th:text="${row[column.key]}"></td></tr>
+                <tr th:if="${table.rows.isEmpty()}"><td th:colspan="${table.columns.size()}" class="text-center py-5">No records to show.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <nav class="pagination-nav" aria-label="Admin record pages">
+            <a th:if="${table.page>0}" th:href="@{/admin(view=${table.view},q=${table.query},page=${table.page-1})}">← Previous</a>
+            <span th:text="'Page '+${table.page+1}+' of '+${table.pages}"></span>
+            <a th:if="${table.page+1<table.pages}" th:href="@{/admin(view=${table.view},q=${table.query},page=${table.page+1})}">Next →</a>
+          </nav>
+        </section>
+      </main>
+      <footer class="app-footer">CredLearn administration <span>All dates are shown in India Standard Time (IST).</span></footer>
+    </div>
+  </div>
+</body>
+</html>

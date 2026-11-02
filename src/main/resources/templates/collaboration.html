@@ -1,0 +1,28 @@
+<!doctype html><html lang="en" xmlns:th="http://www.thymeleaf.org"><body>
+<section th:fragment="meeting" class="panel meeting-panel">
+<span class="eyebrow">LEARN FACE TO FACE</span><h2>Your Google Meet</h2>
+<p th:text="${@display.time(booking.startsAt)}+' IST · '+${booking.durationMinutes}+' minutes'"></p>
+<th:block th:if="${booking.status.name()=='ACCEPTED'}">
+<div th:if="${meeting!=null and meeting.status=='READY'}"><label for="meeting-link">Private meeting link</label><input id="meeting-link" class="form-control" readonly th:value="${meeting.meetingUrl}"><div class="form-actions"><a class="btn btn-primary" th:href="${meeting.meetingUrl}" target="_blank" rel="noopener noreferrer">Join Meeting ↗</a><button class="btn btn-outline-primary" type="button" data-copy-meeting>Copy Link</button></div><p class="form-note" role="status" id="copy-status"></p></div>
+<th:block th:if="${meeting==null or meeting.status!='READY'}">
+<p th:if="${meeting!=null}" class="note-box" th:text="${#strings.isEmpty(meeting.lastError)?'Meeting creation is in progress. Wait a moment before checking again.':meeting.lastError}"></p>
+<p th:if="${booking.scheduleProposedBy!=null}" class="note-box">Approve or dismiss the pending schedule proposal first.</p>
+<th:block th:if="${booking.scheduleProposedBy==null and now.isBefore(booking.startsAt)}">
+<div th:unless="${googleConfigured}" class="note-box"><strong>Google setup is pending</strong><p>Meeting creation has not been configured by your administrator yet. You can still plan your session in chat.</p><button class="btn btn-outline-primary" disabled>Generate Google Meet Link</button></div>
+<th:block th:if="${googleConfigured}"><p class="form-note">Only the organizer connects a Google account. CredLearn creates a scheduled event on that account’s primary calendar. The other student can join using the shared link.</p>
+<form th:unless="${googleConnected}" th:action="@{/sessions/{id}/google/connect(id=${booking.id})}" method="post"><button class="btn btn-primary">Connect Google account</button></form>
+<form th:if="${googleConnected}" th:action="@{/sessions/{id}/meeting(id=${booking.id})}" method="post"><button class="btn btn-primary" th:text="${meeting==null?'Generate Google Meet Link':'Check / retry Google Meet creation'}"></button></form>
+</th:block></th:block></th:block>
+<p th:if="${meeting!=null}" class="form-note">The schedule is locked after meeting creation starts. Cancelling in CredLearn does not remove the organizer’s Google Calendar event; the organizer must cancel that event in Google Calendar too.</p>
+</th:block>
+<p th:unless="${booking.status.name()=='ACCEPTED'}">Meeting controls are available for accepted sessions. Your conversation history stays private.</p>
+<form th:if="${googleConnected}" th:action="@{/sessions/{id}/google/disconnect(id=${booking.id})}" method="post"><button class="link-button">Disconnect Google from this login</button></form>
+</section>
+<section th:fragment="schedule" class="panel mt-4" th:if="${booking.status.name()=='ACCEPTED' and now.isBefore(booking.startsAt)}">
+<span class="eyebrow">AGREE TOGETHER</span><h2>Session schedule</h2>
+<p>The accepted request is your agreed schedule. Discuss changes in chat before proposing a new time. All times below are India Standard Time (Asia/Kolkata).</p>
+<div th:if="${booking.scheduleProposedBy!=null}" class="note-box"><h3>Schedule proposal awaiting approval</h3><p th:text="${@display.time(booking.proposedStartsAt)}+' IST · '+${booking.proposedDurationMinutes}+' minutes'"></p><div class="form-actions"><form th:if="${booking.scheduleProposedBy!=me.id}" th:action="@{/sessions/{id}/schedule/approve(id=${booking.id})}" method="post"><input type="hidden" name="revision" th:value="${booking.scheduleRevision}"><button class="btn btn-primary">Approve new schedule</button></form><span th:if="${booking.scheduleProposedBy==me.id}">Waiting for the other participant.</span><form th:action="@{/sessions/{id}/schedule/dismiss(id=${booking.id})}" method="post"><input type="hidden" name="revision" th:value="${booking.scheduleRevision}"><button class="btn btn-outline-primary">Dismiss proposal</button></form></div></div>
+<form th:if="${booking.scheduleProposedBy==null and meeting==null}" th:action="@{/sessions/{id}/schedule/propose(id=${booking.id})}" method="post" class="schedule-fields"><div><label for="new-start">Proposed date and time (IST)</label><input id="new-start" class="form-control" type="datetime-local" name="startsAt" required></div><div><label for="new-duration">Duration (minutes)</label><input id="new-duration" class="form-control" type="number" name="durationMinutes" min="30" max="240" step="15" th:value="${booking.durationMinutes}" required></div><button class="btn btn-outline-primary">Propose schedule change</button></form>
+<p th:if="${meeting!=null}" class="form-note">A Google meeting has been requested, so this schedule is locked. Cancel and request a new session to change it.</p>
+</section>
+</body></html>

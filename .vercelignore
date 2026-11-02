@@ -1,0 +1,10 @@
+# Upload only the sources needed by the container build.
+*
+!Dockerfile
+!.dockerignore
+!pom.xml
+!vercel.json
+!src
+!src/**
+!scripts
+!scripts/container-entrypoint.sh

@@ -1,0 +1,9 @@
+spring:
+  config:
+    import: classpath:application-hosted.yml
+server:
+  port: ${PORT:10000}
+credlearn:
+  session-key: ${CREDLEARN_SESSION_KEY}
+  chat:
+    transport: poll

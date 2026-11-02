@@ -1,0 +1,30 @@
+<!doctype html><html lang="en" xmlns:th="http://www.thymeleaf.org"><head th:fragment="head(title)">
+<meta charset="utf-8"><meta name="description" content="CredLearn: A Time-Credit-Based Peer-to-Peer Skill Exchange Platform for Campus Communities. Teach Skills. Earn Credits. Keep Learning."><meta name="_csrf" th:content="${_csrf.token}"><meta name="_csrf_header" th:content="${_csrf.headerName}"><link rel="icon" type="image/png" th:href="@{/brand/favicon.png}"><meta name="viewport" content="width=device-width, initial-scale=1"><title th:text="${title} + ' · CredLearn'">CredLearn</title>
+<link rel="stylesheet" th:href="@{/vendor/bootstrap.min.css}"><link rel="stylesheet" th:href="@{/css/app.css}">
+<script defer th:src="@{/vendor/bootstrap.bundle.min.js}"></script><script defer th:src="@{/js/app.js}"></script></head><body>
+<a th:fragment="brand" class="brand" th:href="@{/}" aria-label="CredLearn home"><img class="brand-symbol" th:src="@{/brand/favicon.png}" width="128" height="128" alt=""><img class="brand-wordmark" th:src="@{/brand/credlearn-wordmark.png}" width="687" height="120" alt="CredLearn"></a>
+<header th:fragment="publicNav" class="public-nav wrap"><a th:replace="~{fragments :: brand}"></a><nav aria-label="Main navigation"><a th:href="@{/#how-it-works}">How it works</a><a th:href="@{/login}">Log in</a><a class="btn btn-primary" th:href="@{/register}">Join the community <span aria-hidden="true">↗</span></a></nav></header>
+<aside th:fragment="sidebar" class="sidebar"><a th:replace="~{fragments :: brand}"></a><div class="workspace-label">YOUR CAMPUS. YOUR COMMUNITY.</div>
+<nav class="app-nav" aria-label="Workspace navigation">
+<a th:href="@{/dashboard}" th:classappend="${section=='dashboard'} ? active"><span aria-hidden="true">◫</span> Dashboard</a>
+<a th:href="@{/explore}" th:classappend="${section=='explore'} ? active"><span aria-hidden="true">⌕</span> Explore skills</a>
+<a th:href="@{/skills}" th:classappend="${section=='skills'} ? active"><span aria-hidden="true">✧</span> My skills</a>
+<a th:href="@{/sessions}" th:classappend="${section=='sessions'} ? active"><span aria-hidden="true">▦</span> Sessions</a>
+<a th:href="@{/conversations}" th:classappend="${section=='chat'} ? active"><span aria-hidden="true">☏</span> Conversations</a>
+<a th:href="@{/wallet}" th:classappend="${section=='wallet'} ? active"><span aria-hidden="true">◷</span> Credit wallet</a>
+<a th:if="${me.role.name()=='ADMIN'}" th:href="@{/admin}"><span aria-hidden="true">&#9635;</span> Admin dashboard</a>
+<div class="nav-divider"></div><a th:href="@{/profile}" th:classappend="${section=='profile'} ? active"><span aria-hidden="true">◎</span> My profile</a>
+<a th:href="@{/settings}" th:classappend="${section=='settings'} ? active"><span aria-hidden="true">⚙</span> Settings</a></nav>
+<div class="sidebar-note"><span class="eyebrow">A LITTLE REMINDER</span><p>You know something<br>someone wants to learn.</p><a th:href="@{/skills/new}">Share a skill ↗</a></div>
+<div class="sidebar-user"><span class="avatar" th:text="${@display.initials(me.fullName)}">ST</span><div><strong th:text="${me.fullName}">Student</strong><small th:text="${me.department}">Department</small></div><form th:action="@{/logout}" method="post"><button class="icon-button" aria-label="Log out" title="Log out">↪</button></form></div></aside>
+<header th:fragment="topbar" class="topbar"><span>THE CAMPUS EXCHANGE</span><div><span class="community-dot"></span> Learn together. Grow together.</div></header>
+<div th:fragment="pageHeading(subtitle)" class="page-heading"><div><span class="eyebrow" th:text="${section}">Workspace</span><h1 th:text="${pageTitle}">Welcome</h1><p th:text="${subtitle}">A place to share what you know.</p></div></div>
+<div th:fragment="flash" th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
+<div th:fragment="errors" th:if="${#fields.hasAnyErrors()}" class="alert alert-danger" role="alert"><strong>Please check your details.</strong><ul><li th:each="err : ${#fields.allErrors()}" th:text="${err}"></li></ul></div>
+<article th:fragment="skillCard(skill)" class="skill-card"><div class="skill-card-top"><span class="skill-symbol" aria-hidden="true" th:text="${skill.category.name()=='PROGRAMMING' || skill.category.name()=='WEB_DEVELOPMENT' ? '&lt;/&gt;' : '✧'}"></span><span class="tag" th:text="${skill.category.label}">Programming</span></div>
+<h3 th:text="${skill.title}">Skill title</h3><p class="skill-description" th:text="${skill.description}">Description</p><div class="teacher"><span class="avatar small" th:text="${@display.initials(skill.owner.fullName)}"></span><div><strong th:text="${skill.owner.fullName}"></strong><small th:text="${skill.owner.department} + ' · Year ' + ${skill.owner.yearOfStudy}"></small></div></div>
+<div class="skill-card-bottom"><span><strong>1</strong> credit / hour</span><a th:if="${skill.owner.id!=me.id}" th:href="@{/sessions/request/{id}(id=${skill.id})}">Request session ↗</a><a th:if="${skill.owner.id==me.id}" th:href="@{/skills/{id}/edit(id=${skill.id})}">Edit your skill ↗</a></div></article>
+<div th:fragment="transactions(items)" class="transaction-list"><div th:if="${#lists.isEmpty(items)}" class="empty-state"><span aria-hidden="true">◷</span><h3>Your story starts here</h3><p>Completed exchanges and starter credits will appear here.</p></div>
+<div th:each="tx : ${items}" class="transaction"><span class="transaction-icon" th:classappend="${tx.receiver.id==me.id} ? positive" th:text="${tx.receiver.id==me.id ? '↙' : '↗'}"></span><div class="transaction-info"><strong th:text="${tx.transactionType=='STARTER' ? 'Welcome to CredLearn' : tx.session.skill.title}"></strong><small th:text="${@display.time(tx.createdAt)}"></small></div><span class="credit-amount" th:classappend="${tx.receiver.id==me.id} ? positive" th:text="${(tx.receiver.id==me.id ? '+' : '−') + tx.amount}"></span></div></div>
+<footer th:fragment="footer" class="public-footer wrap"><a th:replace="~{fragments :: brand}"></a><span>Teach Skills. Earn Credits. Keep Learning.</span><span>Made for campus communities.</span></footer>
+</body></html>

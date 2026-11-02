@@ -1,0 +1,31 @@
+# Single-instance hosting behind the provider's trusted HTTPS reverse proxy.
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-timeout: 10000
+      validation-timeout: 3000
+      max-lifetime: 600000
+  flyway:
+    user: ${MIGRATION_DB_USERNAME:${DB_USERNAME}}
+    password: ${MIGRATION_DB_PASSWORD:${DB_PASSWORD}}
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+server:
+  address: 0.0.0.0
+  port: ${PORT:10000}
+  forward-headers-strategy: native
+  shutdown: graceful
+  tomcat:
+    threads:
+      max: 32
+      min-spare: 4
+    max-connections: 256
+    accept-count: 64
+  servlet:
+    session:
+      cookie:
+        secure: true

@@ -1,0 +1,7 @@
+*
+!pom.xml
+!src/
+!src/**
+!Dockerfile
+!scripts/
+!scripts/container-entrypoint.sh
