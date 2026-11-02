@@ -1,7 +1,10 @@
 package com.credlearn.config;
 
+import com.credlearn.security.OwnerAdminPolicy;
 import java.time.Clock;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.*;
+import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -10,6 +13,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableMethodSecurity
+@EnableConfigurationProperties(AdminOwnerProperties.class)
 public class AppConfiguration {
   @Bean
   Clock clock() {
@@ -22,7 +26,7 @@ public class AppConfiguration {
   }
 
   @Bean
-  SecurityFilterChain security(HttpSecurity http) throws Exception {
+  SecurityFilterChain security(HttpSecurity http, OwnerAdminPolicy ownerAdmin) throws Exception {
     http.authorizeHttpRequests(
             a ->
                 a.dispatcherTypeMatchers(
@@ -40,7 +44,9 @@ public class AppConfiguration {
                         "/error")
                     .permitAll()
                     .requestMatchers("/admin", "/admin/**")
-                    .hasRole("ADMIN")
+                    .access(
+                        (authentication, context) ->
+                            new AuthorizationDecision(ownerAdmin.allowed(authentication.get())))
                     .anyRequest()
                     .hasRole("STUDENT"))
         .formLogin(

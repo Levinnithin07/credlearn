@@ -33,6 +33,7 @@ public class UserService {
       throw new RuleViolation("An account already uses this email. Please sign in.");
     validatePassword(f.getPassword(), f.getConfirmPassword());
     var u = new UserAccount();
+    u.setRole(AccountRole.STUDENT);
     u.setFullName(f.getFullName().trim());
     u.setEmail(email);
     u.setPasswordHash(encoder.encode(f.getPassword()));

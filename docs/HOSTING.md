@@ -21,6 +21,7 @@ Configure server-side environment values:
 | `DB_CA_CERT_BASE64` | Base64 of your database provider's public PEM CA certificate |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Your OAuth web client, if Google Meet is enabled |
 | `GOOGLE_REDIRECT_URI` | Your registered HTTPS callback |
+| `CREDLEARN_ADMIN_OWNER_USER_ID` | Owner-managed private account binding; unset/zero denies all administrator access |
 
 The container entrypoint imports the public database CA into
 `/tmp/credlearn-db-trust.p12`. For that entrypoint, add these JDBC URL parameters:

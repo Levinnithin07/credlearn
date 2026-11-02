@@ -2,6 +2,7 @@ package com.credlearn.controller;
 
 import com.credlearn.entity.Category;
 import com.credlearn.exception.RuleViolation;
+import com.credlearn.security.OwnerAdminPolicy;
 import com.credlearn.service.UserService;
 import java.security.Principal;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class CommonAdvice {
   private final UserService users;
+  private final OwnerAdminPolicy ownerAdmin;
 
   @Value("${credlearn.chat.transport:sse}")
   private String chatTransport;
@@ -24,6 +27,7 @@ public class CommonAdvice {
   void common(Principal p, Model model) {
     model.addAttribute("categories", Category.values());
     model.addAttribute("chatTransport", chatTransport);
+    model.addAttribute("ownerAdmin", p instanceof Authentication a && ownerAdmin.allowed(a));
     if (p != null) model.addAttribute("me", users.current(p.getName()));
   }
 

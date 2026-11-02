@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("@ownerAdminPolicy.allowed(authentication)")
 public class AdminQueryService {
   private final JdbcTemplate jdbc;
   private final Display display;

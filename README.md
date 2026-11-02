@@ -155,6 +155,7 @@ use `./scripts/stop-local-db.ps1` to stop this isolated database.
 | `GOOGLE_REDIRECT_URI` | Exact registered Google callback | `http://127.0.0.1:8080/google/callback` |
 | `SPRING_PROFILES_ACTIVE` | Runtime profile | Default for local use; `hosted` or `vercel` for configured hosting |
 | `CREDLEARN_SESSION_KEY` | Shared-session AES encryption key | Required only with `vercel`; base64 of 32 random bytes |
+| `CREDLEARN_ADMIN_OWNER_USER_ID` | Private account binding controlled by the deployment owner | Unset/zero disables administrator access |
 
 ## Google Meet setup (optional)
 
@@ -213,6 +214,8 @@ transitions, scheduling, private chat, Google API contracts, wallet reservations
 concurrent credit transfers, and rollback. It also checks encrypted shared
 sessions across independent HTTP servers and a restarted instance. These are
 real-MySQL integration tests, not an in-memory database substitute.
+Administrator tests verify the private owner binding, fail-closed configuration,
+rejection of other accounts marked `ADMIN`, and revocation in existing sessions.
 
 After testing, set `DB_URL` back to your development database before starting the
 application normally.
@@ -230,20 +233,24 @@ Sessions last 30–240 minutes in 15-minute increments. All displayed scheduling
 times use **Asia/Kolkata (IST)**; database timestamps use UTC. Acceptance and
 chatting do not transfer credits. See [credit rules](docs/CREDIT-WORKFLOW.md).
 
-## Administrator setup
+## Owner-only administration
 
-There is **no default administrator login**. Register an account normally, then
-promote that account using your trusted local database administrator connection.
-Use the actual account's ID from your own `users` table:
+**Administration of a hosted CredLearn website is restricted to its designated
+owner account.** Public registration always creates a student. There is no admin
+signup, self-promotion endpoint, promotion button, or shared/default admin login.
 
-```sql
-SELECT id, full_name, email, role FROM users ORDER BY id;
-```
+The server checks both the current persisted administrator role and one account
+binding managed privately by the deployment owner. Changing another account's
+database role to `ADMIN` is insufficient. Both administrator URLs and backend
+administration services enforce the owner check on every request, including
+requests from existing login sessions. If the private binding is not configured,
+administrator access is denied for everyone.
 
-Run `UPDATE users SET role = 'ADMIN' WHERE id = ...` with that specific ID in
-your own database, then sign in at `/admin/login`. Never expose role assignment
-through public registration. No production administrator identity, password, or
-password hash is included in this repository.
+The owner signs in through `/admin/login` using their existing private account.
+Students should contact the website owner for administrative matters. This
+repository provides no owner identity, account ID, password, password hash, or
+access to any deployed website. Downloading this code grants no access to an
+existing CredLearn deployment.
 
 ## Repository layout
 

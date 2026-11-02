@@ -4,6 +4,15 @@ This repository intentionally contains no working account credentials, database
 data, OAuth client secrets, private keys, provider tokens, or password hashes.
 An empty install has no seeded student or administrator accounts.
 
+Administration is owner-bound. The deployment's private owner account binding
+and the current persisted administrator role must both match; `ADMIN` in a table
+or an old login session is not enough. Public registration never grants admin
+rights. Admin routes and backend admin services recheck the binding and stored
+role on every request. Missing owner configuration disables all admin access.
+Keep database, hosting, and repository management access restricted to the owner:
+someone who controls the server or database can alter code, account credentials,
+or deployment settings, which application authorization cannot prevent.
+
 - Keep real environment variables in your shell, IDE secret settings, or hosting
   secret manager. `.env.example` is a blank reference, not an automatically loaded
   configuration file.

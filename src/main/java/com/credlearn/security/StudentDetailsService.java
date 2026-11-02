@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class StudentDetailsService implements UserDetailsService {
   private final UserRepository users;
+  private final OwnerAdminPolicy ownerAdmin;
 
   public UserDetails loadUserByUsername(String email) {
     var u =
@@ -17,9 +18,7 @@ public class StudentDetailsService implements UserDetailsService {
             .findByEmail(email.trim().toLowerCase(Locale.ROOT))
             .orElseThrow(() -> new UsernameNotFoundException("Invalid credentials"));
     String[] roles =
-        u.getRole() == com.credlearn.entity.AccountRole.ADMIN
-            ? new String[] {"STUDENT", "ADMIN"}
-            : new String[] {"STUDENT"};
+        ownerAdmin.isOwnerAccount(u) ? new String[] {"STUDENT", "ADMIN"} : new String[] {"STUDENT"};
     return User.withUsername(u.getEmail()).password(u.getPasswordHash()).roles(roles).build();
   }
 }

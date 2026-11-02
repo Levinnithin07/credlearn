@@ -22,6 +22,11 @@ Browser (Thymeleaf, Bootstrap, JavaScript)
 - Flyway owns the schema migrations. Hibernate validates it at startup.
 - Spring Security provides BCrypt passwords, session authentication, role checks,
   CSRF protection, security headers, and login/logout.
+- Administration additionally requires the deployment's privately bound owner
+  account and a current persisted admin role. Admin URL and service checks reject
+  other accounts even if their stored role or an older session claims `ADMIN`.
+  Public registration is explicitly student-only; unset owner configuration
+  disables administrator access.
 
 ## Modules
 

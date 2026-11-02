@@ -8,6 +8,7 @@ import static org.springframework.security.test.web.servlet.response.SecurityMoc
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import com.credlearn.config.AdminOwnerProperties;
 import com.credlearn.dto.Forms;
 import com.credlearn.entity.*;
 import com.credlearn.exception.RuleViolation;
@@ -44,6 +45,8 @@ class CredLearnIntegrationTest {
   @Autowired PasswordEncoder passwords;
   @MockitoBean Clock clock;
   @MockitoBean GoogleCalendarGateway googleGateway;
+  @MockitoBean AdminOwnerProperties ownerConfiguration;
+  @Autowired AdminQueryService adminQueries;
   @Autowired ChatService chats;
   @Autowired ScheduleService schedules;
   @Autowired MeetingService meetings;
@@ -546,6 +549,7 @@ class CredLearnIntegrationTest {
     var admin = student("Administrator");
     admin.setRole(AccountRole.ADMIN);
     userRepo.saveAndFlush(admin);
+    when(ownerConfiguration.ownerUserId()).thenReturn(admin.getId());
     mvc.perform(get("/admin/login")).andExpect(status().isOk());
     mvc.perform(get("/admin")).andExpect(redirectedUrl("/admin/login"));
     var studentLogin =
@@ -618,6 +622,7 @@ class CredLearnIntegrationTest {
     var admin = student("Administrator");
     admin.setRole(AccountRole.ADMIN);
     userRepo.saveAndFlush(admin);
+    when(ownerConfiguration.ownerUserId()).thenReturn(admin.getId());
     var learner = student("Learner");
     var s = request(skill(admin), learner, 60, 1);
     sessions.accept(s.getId(), admin.getId());
@@ -665,6 +670,74 @@ class CredLearnIntegrationTest {
     assertThat(
             ((AdminQueryService.Table) injection.getModelAndView().getModel().get("table")).total())
         .isZero();
+  }
+
+  @Test
+  void administratorAccessFailsClosedWithoutPrivateOwnerConfiguration() throws Exception {
+    var account = student("Unconfigured");
+    account.setRole(AccountRole.ADMIN);
+    userRepo.saveAndFlush(account);
+    mvc.perform(formLogin("/login").user("email", account.getEmail()).password("TestPassword!2026"))
+        .andExpect(authenticated().withRoles("STUDENT"))
+        .andExpect(redirectedUrl("/dashboard"));
+    mvc.perform(get("/admin").with(user(account.getEmail()).roles("STUDENT", "ADMIN")))
+        .andExpect(status().isForbidden());
+  }
+
+  @Test
+  void anotherPersistedAdminRoleCannotBypassOwnerBindingOrServiceAuthorization() throws Exception {
+    var owner = student("Owner");
+    owner.setRole(AccountRole.ADMIN);
+    userRepo.saveAndFlush(owner);
+    when(ownerConfiguration.ownerUserId()).thenReturn(owner.getId());
+    var other = student("Otheradmin");
+    other.setRole(AccountRole.ADMIN);
+    userRepo.saveAndFlush(other);
+    mvc.perform(formLogin("/login").user("email", other.getEmail()).password("TestPassword!2026"))
+        .andExpect(authenticated().withRoles("STUDENT"))
+        .andExpect(redirectedUrl("/dashboard"));
+    mvc.perform(get("/admin").with(user(other.getEmail()).roles("STUDENT", "ADMIN")))
+        .andExpect(status().isForbidden());
+    var context =
+        org.springframework.security.core.context.SecurityContextHolder.createEmptyContext();
+    context.setAuthentication(
+        new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+            other.getEmail(),
+            null,
+            org.springframework.security.core.authority.AuthorityUtils.createAuthorityList(
+                "ROLE_STUDENT", "ROLE_ADMIN")));
+    try {
+      org.springframework.security.core.context.SecurityContextHolder.setContext(context);
+      assertThatThrownBy(() -> adminQueries.counts()).isInstanceOf(AccessDeniedException.class);
+    } finally {
+      org.springframework.security.core.context.SecurityContextHolder.clearContext();
+    }
+  }
+
+  @Test
+  void ownerAdministratorPermissionsAreRecheckedForExistingLoginSessions() throws Exception {
+    var owner = student("Owner");
+    owner.setRole(AccountRole.ADMIN);
+    userRepo.saveAndFlush(owner);
+    when(ownerConfiguration.ownerUserId()).thenReturn(owner.getId());
+    var login =
+        (org.springframework.mock.web.MockHttpSession)
+            mvc.perform(
+                    formLogin("/login")
+                        .user("email", owner.getEmail())
+                        .password("TestPassword!2026"))
+                .andExpect(authenticated().withRoles("STUDENT", "ADMIN"))
+                .andReturn()
+                .getRequest()
+                .getSession(false);
+    mvc.perform(get("/admin").session(login)).andExpect(status().isOk());
+    // Changing the private binding revokes an already-issued administrator authority immediately.
+    when(ownerConfiguration.ownerUserId()).thenReturn(owner.getId() + 1);
+    mvc.perform(get("/admin").session(login)).andExpect(status().isForbidden());
+    when(ownerConfiguration.ownerUserId()).thenReturn(owner.getId());
+    owner.setRole(AccountRole.STUDENT);
+    userRepo.saveAndFlush(owner);
+    mvc.perform(get("/admin").session(login)).andExpect(status().isForbidden());
   }
 
   private void runTogether(Runnable... actions) throws Exception {

@@ -29,6 +29,8 @@ server:
     include-message: never
     include-stacktrace: never
 credlearn:
+  admin:
+    owner-user-id: ${CREDLEARN_ADMIN_OWNER_USER_ID:0}
   zone: Asia/Kolkata
   google:
     client-id: ${GOOGLE_CLIENT_ID:}
